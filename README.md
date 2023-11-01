@@ -10,19 +10,18 @@ First, create and active a Python virtual environment:
 conda create -n <name> python=3.9
 conda active <name>
 ```
+Next, clone the repository and checkout the `final_submission` branch:
+```
+git clone https://github.com/GabrielWaite/QSP-Coding.git
+cd QSP-Coding
+git checkout final_submission
+```
 Then, pip install the required dependencies:
 ```
 pip install -r requirement.txt
 ```
-Next, clone the repository and checkout the `final_submission` branch:
+To run the file,ensure you are in the correct directory (`QSP-Coding`) then call the file `main.py`:
 ```
-git clone https://github.com/GabrielWaite/QSP-Coding.git
-git checkout final_submission
-```
-## Running the file
-To run the file, move into the correct directory then call the file ```main.py```:
-```
-cd <folder name>
 python main.py
 ```
 
