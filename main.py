@@ -36,7 +36,7 @@ def other_inputs():
     global execution_time
     global qubit_number
     global trotter_step 
-    step_number = int(input("Write doen the trotter-step "))
+    step_number = int(input("Provide a number of Trotter steps: "))
     # Added from n_t_ham_sim.py
     if step_number <= 0 or step_number > 500:
             raise ValueError('The Trotter step count must lie between 0 and 500 inclusive!')
@@ -405,7 +405,7 @@ def get_hashmap():
     -> Description: The function takes a hashmap from user as a string in the mentioned format and converts it to a dictionary
     automatically. It stores the input value in hash_map variable. 
     '''
-    hashmap_string = input("Enter the Hamiltonian in the format {'gate': weight, ...}: ")
+    hashmap_string = input("Enter the Hamiltonian in the format {'GATE': weight, ...}: ")
     global hash_map
     # Evaluating the string to convert it to a Python dictionary
     hashmap = eval(hashmap_string)
@@ -428,7 +428,7 @@ def valid_hashmap(hashmap = None):
     for term in hashmap.keys():
         for gate in term:
             if gate not in valid_gates:
-                raise TypeError("The provided Gate term doesn't belong to Pauli Gates")
+                raise TypeError("The provided Gate term doesn't belong to Pauli Gates.\nEnsure the characters are capitalised!")
     return True
 
 def test10_validmap():     #tests and shows that it returns True when user provides valid hashmap
