@@ -106,4 +106,4 @@ python tests/numerical_trotter_testing.py
 ## Contributions
 This code has three main contributors. The main contributions of each author is as follows (not exhaustive contribution list):
 - Gabriel Waite: numerical and Trotter Hamiltonian simulation code
-- ...
+- Karl Lin: Quantum signal processing Hamiltonian simulation codes
