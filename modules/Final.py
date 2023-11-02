@@ -1,15 +1,45 @@
-from modules import numerical_trotter_hamiltonian_simulation as hs
-from modules.QSP_hamiltonian_simulation import HamSim_byQET
+#!/usr/bin/env python
+# coding: utf-8
 
-import numpy as np
-import scipy as sp
-import csv
-import sympy
+# # INPUTS AND CHECKS
 
-from sympy import Matrix
-from sympy.physics.quantum.dagger import Dagger
+# In this Notebook, we take all the required inputs and perform all the necessary checks to use those for the rest of our code. The main obstacle of this code is to perform the block encoding efficiently. Though, for our case, as we are restricting our user to input only Pauli string as Hamiltonian ($H = \sum_j \alpha_j(\sigma_1^{\mu}\otimes \cdots \otimes\sigma_n^{\nu})_j$), it would be reasonable to block encode the provided Hamiltonian following the convention
+# 
+# 
+# $$
+# \begin{equation}
+# \begin{pmatrix}
+# H & i\sqrt{1-H^2}\\
+# i\sqrt{1-H^2} & -H
+# \end{pmatrix}
+# \end{equation}
+# $$
+# <br>
+# 
+# 
+# where $H$ is the Hamiltonian the user wants to simulate.
+# 
+# To give flexibility to the user, we go for three options.
+# 
+# 1. The user knows the block encoded matrix, the Hamiltonian matrix and the Hamiltonian hash map.
+# 2. The user knows about the Hamiltonian matrix and the Hamiltonian hash map.
+# 3. The user only knows the hash map.
+# 
+# For the Trotterization and Numerical calculations we do not need the block encoding of the Hamiltonian, we need it only for the QSP part. We add a block diagram to showcase the input model for our code.
+# ***
+# 
+# ![yuval2.png](attachment:yuval2.png)
+# 
+# ***
+# 
+# We define some global variables which can be used further when calling a class or method in the rest of the code. At the end, when the user calls `user()` function the user will be asked the questions one by one as every other function is called in that.
 
-import matplotlib.pyplot as plt
+# ## Global Variables
+
+# Let's define some global variables. These are used to save the inputs from the user and use these for further computations
+
+# In[3]:
+
 
 initial_state = None            #(1D matrix)      #The intial state is assigned to this global variable
 execution_time = None           #(integer)        #The time of execution (0,5) is assigned to this global variable
@@ -24,6 +54,16 @@ normalized_hamiltonian = None   #(2D matrix)      #The hamiltonian matrix is nor
 
 hash_map = None                 #(Dictionary)     #The hash map is assigned to this global variable
 U_block = None                  #(2D matrix)      #If the user does not know the block encoded matrix beforehand, we block encode that, and that is assigned to this global variable
+
+
+# In[ ]:
+
+
+
+
+
+# In[32]:
+
 
 def other_inputs():
     '''
@@ -53,6 +93,12 @@ def other_inputs():
         raise ValueError('You cannot have', len(state) ,'with', qubit, 'qubit(s)')
     qubit_number = qubit
 
+
+# In[5]:
+
+
+#Input: Block Encoded Matrix, Check: It's unitary and square
+import numpy as np
 def get_matrix():
 
     '''
@@ -74,6 +120,8 @@ def get_matrix():
     unitary_matrix = M
 
     return M, err
+
+#matrix, err = get_matrix()  To store the input matrix and use it further in the code
 
 def is_square(M):
     '''
@@ -197,6 +245,14 @@ def test3_not_square():      #tests and shows that it returns False when the mat
     except AssertionError as error:
         print(error)
         return False
+
+
+# In[6]:
+
+
+#Taking the Hamiltonian matrix as input from the user and checking if it's Hermitian and square.
+
+import numpy as np
 
 def get_hamiltonian_matrix():
 
@@ -334,6 +390,10 @@ def test7_not_normalised():     #tests and shows that it returns False when the 
     except AssertionError:
         return False
 
+
+# In[7]:
+
+
 def is_upper_left(H = None, U = None):
     '''
     -> is_upper_left() 
@@ -393,6 +453,13 @@ def test9_not_upper_left():     #tests and shows that it returns False when the 
     except AssertionError as err:
         print(err)
         return False
+
+
+# In[39]:
+
+
+# User can just copy and paste the Hash map in dictionary format
+
 
 def get_hashmap():
     '''
@@ -461,6 +528,12 @@ def test11_not_validmap():     #tests and shows that it returns False when user 
     except AssertionError as err:
         print(err)
         return False
+
+
+# In[9]:
+
+
+#Check that the hash_map and hamiltonian matrix match
 
 I = np.array([[1, 0], [0, 1]])
 X = np.array([[0, 1], [1, 0]])
@@ -538,6 +611,11 @@ def test13_not_hashmap_to_matrix():     #tests and shows that it returns False w
     except AssertionError:
         return False, "Test failed"
 
+
+# In[10]:
+
+
+import scipy as sp
 def block_encoded_U(Ham = None):
     '''
     -> block_encoded_U() 
@@ -601,6 +679,11 @@ def test15_block_encoded_U():     #tests and shows that it returns True when the
     except AssertionError:
         return False, "Test failed"
 
+
+# In[40]:
+
+
+
 def user():
     other_inputs()
     print("If you have the block-encoded matrix, be sure that the norm is an Operator norm")
@@ -639,72 +722,11 @@ def user():
         raise TypeError("Invalid input")
     return True
 
-if __name__ == "__main__":
-    user()
-    output_info_list = list(eval(input('Provide a list of keys to perform desired tasks based on the following legend:\n0: statevector at time t\n1: energy at time t\n2: Energy evolution data up to max time\n3: fidelity evolution data up to max time\n\t\t: ')))
-
-    ## Instantiate an object of the class HamSim_byQET
-    obj_QSP = HamSim_byQET(num_qubits=qubit_number, 
-                           H=normalized_hamiltonian,
-                           evolution_time=execution_time,
-                           starting_state=initial_state)
-    
-    obj_QSP.computeQSPPhaseAngles()
-    obj_QSP.buildCirc()
-
-    for item in output_info_list:
-        if item == 0:
-            sv_file_name = input('Provide a file name for your state vector data: ')
-            sv_data = ['Numerical statevector at time {}: \n{}'.format(execution_time, hs.NumericalHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).getStatevector(execution_time=execution_time, initial_state=initial_state)),
-                       'Trotter statevector at time {}: \n{}'.format(execution_time, hs.TrotterHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).getStatevector(execution_time=execution_time, initial_state=initial_state)),
-                       'Simulation Type: {}'.format('statevector'),
-                       'Hamiltonian Map: {}'.format(hash_map),
-                       'Qubit Count: {}'.format(qubit_number),
-                       'Execution Time: 0 to {}'.format(execution_time),
-                       'Initial State: {}'.format(initial_state)]
-            file_sv_data = "statevector_{}_metadata.txt".format(sv_file_name)
-            try:
-                QSP_sv = obj_QSP.runHamiltonianSimulator()[1].data
-                sv_data.insert(2,"QSP statevector at time {}: \n{}".format(execution_time, QSP_sv))
-            except:
-                print('for the inputs you have provided, unfortunately, the QSP module is not working.\nIt is a particularly fragile module. We apologise for this inconvenience!\nEnjoy the classical and Trotter outputs however!:)')
-
-            with open(file_sv_data, mode = "w") as f:
-                for item in sv_data:
-                    f.write(item + '\n')
-        if item == 1:
-            energy_file_name = input('Provide a file name for your energy data: ')
-            energy_data = ['Numerical energy at time {}: \n{}'.format(execution_time, hs.NumericalHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).getEnergy(execution_time=execution_time, initial_state=initial_state)),
-                           'Trotter energy at time {}: \n{}'.format(execution_time, hs.TrotterHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).getEnergy(execution_time=execution_time, initial_state=initial_state)),
-                           'Simulation Type: {}'.format('energy'),
-                           'Hamiltonian Map: {}'.format(hash_map),
-                           'Qubit Count: {}'.format(qubit_number),
-                           'Execution Time: 0 to {}'.format(execution_time),
-                           'Initial State: {}'.format(initial_state)]
-            file_energy_data = "energy_{}_metadata.txt".format(energy_file_name)
-            try:
-                QSP_energy = obj_QSP.getEnergy()
-                energy_data.insert(2,"QSP energy at time {}: \n{}".format(execution_time, QSP_energy))
-            except:
-                print('for the inputs you have provided, unfortunately, the QSP module is not working.\nIt is a particularly fragile module. We apologise for this inconvenience!\nEnjoy the classical and Trotter outputs however!:)')
-
-            with open(file_energy_data, mode = "w") as f:
-                for item in energy_data:
-                    f.write(item + '\n')
-        if item == 2:
-            input_name_sv = input('Provide a file name for your energy evolution data file: ')
-            hs.NumericalHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).energyEvolutionData(file_name = input_name_sv, initial_state=initial_state, max_time=execution_time)
-            hs.TrotterHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).energyEvolutionData(file_name = input_name_sv, initial_state=initial_state, max_time=execution_time)
-        if item == 3:
-            input_name_fid = input('Provide a file name for your fidelity evolution data file: ')
-            hs.TrotterHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).NTFidelityTest(file_name = input_name_fid, initial_state=initial_state, max_time=execution_time)
-            try:
-                obj_QSP.saveFidelity(filename=input_name_fid, max_time=execution_time)
-            except:
-                print('for the inputs you have provided, unfortunately, the QSP module is not working.\nIt is a particularly fragile module. We apologise for this inconvenience!\nEnjoy the classical and Trotter outputs however!:)')
-            
 
 
-    qc_file_name = input('Provide a file name for your quantum circuit data: ')
-    hs.TrotterHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).getOpenQASM(file_name=qc_file_name)
-    obj_QSP.getOpenQASM(filename=qc_file_name)
+
+# In[41]:
+
+
+user()
+
