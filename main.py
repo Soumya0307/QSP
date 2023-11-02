@@ -350,13 +350,18 @@ if __name__ == "__main__":
             sv_file_name = input('Provide a file name for your state vector data: ')
             sv_data = ['Numerical statevector at time {}: \n{}'.format(execution_time, hs.NumericalHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).getStatevector(execution_time=execution_time, initial_state=initial_state)),
                        'Trotter statevector at time {}: \n{}'.format(execution_time, hs.TrotterHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).getStatevector(execution_time=execution_time, initial_state=initial_state)),
-                       "QSP statevector at time {}: \n{}".format(execution_time, run_QSP_HamSim(num_qubits=qubit_number, H = normalized_hamiltonian, evolution_time=execution_time)[1].data),
                        'Simulation Type: {}'.format('statevector'),
                        'Hamiltonian Map: {}'.format(hash_map),
                        'Qubit Count: {}'.format(qubit_number),
                        'Execution Time: 0 to {}'.format(execution_time),
                        'Initial State: {}'.format(initial_state)]
             file_sv_data = "statevector_{}_metadata.txt".format(sv_file_name)
+            try:
+                QSP_sv = run_QSP_HamSim(num_qubits=qubit_number, H = normalized_hamiltonian, evolution_time=execution_time)[1].data
+                sv_data.insert(2,"QSP statevector at time {}: \n{}".format(execution_time, QSP_sv))
+            except:
+                print('for the inputs you have provided, unfortunately, the QSP module is not working.\nIt is a particularly fragile module. We apologise for this inconvenience!\nEnjoy the classical and Trotter outputs however!:)')
+
             with open(file_sv_data, mode = "w") as f:
                 for item in sv_data:
                     f.write(item + '\n')
