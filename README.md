@@ -103,6 +103,10 @@ To test the numerical and Trotter Hamiltonian simulation module, run:
 ```
 python tests/numerical_trotter_testing.py
 ```
+To test the quantum signal processing Hamiltonian simulation module, run:
+```
+python tests/QSP_testing.py
+```
 ## Contributions
 This code has three main contributors. The main contributions of each author is as follows (not exhaustive contribution list):
 - Gabriel Waite: numerical and Trotter Hamiltonian simulation code
