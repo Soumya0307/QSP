@@ -7,22 +7,22 @@ This coding project is aimed at conducting Hamiltonian simulaiton via three meht
 ## Installation
 First, create and active a Python virtual environment:
 ```
-conda create -n <name> python=3.9
-conda activate <name>
+$ conda create -n <name> python=3.9
+$ conda activate <name>
 ```
 Next, clone the repository and checkout the `final_submission` branch:
 ```
-git clone https://github.com/GabrielWaite/QSP-Coding.git
-cd QSP-Coding
-git checkout final_submission
+$ git clone https://github.com/GabrielWaite/QSP-Coding.git
+$ cd QSP-Coding
+$ git checkout final_submission
 ```
 Then, pip install the required dependencies:
 ```
-pip install -r requirement.txt
+$ pip install -r requirement.txt
 ```
 To run the file,ensure you are in the correct directory (`QSP-Coding`) then call the file `main.py`:
 ```
-python main.py
+$ python main.py
 ```
 
 ## Taking User Inputs
@@ -82,10 +82,23 @@ Provide a file name for your state vector data: demo
 Provide a file name for your quantum circuit data: demo_qc
 ```
 ### Example Output
-For the example just shown, **three** files will be returned:
+For the example just shown, **five** files will be returned:
 1. `statevector_demo_metadata.txt`
 2. `trotter_qasm_demo_qc.txt`
-3. `qsp_qasm_demo_qc.txt`
+3. `QSP_cos_qasm_demo_qc.txt`
+4. `QSP_sin_qasm_demo_qc.txt`
+5. `LCU_qasm_demo_qc.txt`
+
+To locate these, given the virtual environment above, ensure you are in the `QSP-Coding` directory.
+You can open the file using the following example code (macOS):
+```
+$ open -a TextEdit trotter_qasm_DEMOQC.txt
+```
+
+To see all files, run:
+```
+$ ls
+```
 
 ## General Output
 By default, the Trotter and QSP ```QISKIT``` OpenQASM files will be saved.
