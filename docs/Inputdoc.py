@@ -38,7 +38,7 @@ from Final import initial_state, execution_time, qubit_number, trotter_step, err
 # For the Trotterization and Numerical calculations we do not need the block encoding of the Hamiltonian, we need it only for the QSP part. We add a block diagram to showcase the input model for our code.
 # ***
 # 
-# ![yuval2.png](attachment:yuval2.png)
+# ![QSP-Coding/docs/Input_model.png](attachment:yuval2.png)
 # 
 # ***
 # 
