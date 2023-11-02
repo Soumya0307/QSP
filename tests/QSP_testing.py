@@ -10,7 +10,7 @@ from sympy import Matrix
 import matplotlib.pyplot as plt
 
 from helper_functions import construct_BE_rand, construct_BE, convert_binary_to_int
-from HamiltonianSimulation_by_QET import HamSim_byQET
+from QSP_hamiltonian_simulation import HamSim_byQET
 
 
 I = np.identity(2)
