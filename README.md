@@ -111,7 +111,7 @@ python tests/QSP_testing.py
 This code has three main contributors. The main contributions of each author is as follows (not exhaustive contribution list):
 - Gabriel Waite: numerical and Trotter Hamiltonian simulation code
 - Karl Lin: Quantum signal processing Hamiltonian simulation codes
-- ...
+- Soumya Sarkar: Inputs from the user and required checkings
 ## Marking
 Please note that we've decided to use the public package PyQSP (https://github.com/ichuang/pyqsp) to generate the QSP phase angles. Therefore, all files under the folder name "pyqsp_master" are not of our own work and can be skipped over when assessing our codes. The rest of files are assessable.
 ## References
