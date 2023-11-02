@@ -1,5 +1,6 @@
 from modules import numerical_trotter_hamiltonian_simulation as hs
-from modules import runHamiltonianSimulatorbyQET as ks
+# from modules import runHamiltonianSimulatorbyQET as ks
+from modules.QSP_hamiltonian_simulation import run_QSP_HamSim
 
 
 import numpy as np
@@ -349,7 +350,7 @@ if __name__ == "__main__":
             sv_file_name = input('Provide a file name for your state vector data: ')
             sv_data = ['Numerical statevector at time {}: \n{}'.format(execution_time, hs.NumericalHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).getStatevector(execution_time=execution_time, initial_state=initial_state)),
                        'Trotter statevector at time {}: \n{}'.format(execution_time, hs.TrotterHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).getStatevector(execution_time=execution_time, initial_state=initial_state)),
-                       "QSP statevector at time {}: \n{}".format(execution_time, run_HamSim_H(num_qubits=qubit_number, H = normalized_hamiltonian, evolution_time=execution_time)[1].data),
+                       "QSP statevector at time {}: \n{}".format(execution_time, run_QSP_HamSim(num_qubits=qubit_number, H = normalized_hamiltonian, evolution_time=execution_time)[1].data),
                        'Simulation Type: {}'.format('statevector'),
                        'Hamiltonian Map: {}'.format(hash_map),
                        'Qubit Count: {}'.format(qubit_number),
