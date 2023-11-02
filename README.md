@@ -111,10 +111,7 @@ This code has three main contributors. The main contributions of each author is 
 ## Marking
 Please note that we've decided to use the public package PyQSP (https://github.com/ichuang/pyqsp) to generate the QSP phase angles. Therefore, all files under the folder name "pyqsp_master" are not of our own work and can be skipped over when assessing our codes. The rest of files are assessable.
 ## References
-- Grand Unification of Quantum Algorithms
-John M. Martyn, Zane M. Rossi, Andrew K. Tan, and Isaac L. Chuang
-PRX Quantum 2, 040203 – Published 3 December 2021
+- Grand Unification of Quantum Algorithms. John M. Martyn, Zane M. Rossi, Andrew K. Tan, and Isaac L. Chuang. PRX Quantum 2, 040203 – Published 3 December 2021
 - PyQSP (https://github.com/ichuang/pyqsp)
-- Finding Angles for Quantum Signal Processing with Machine Precision citation
-Rui Chao, Dawei Ding, András Gilyén, Cupjin Huang, and Mario Szegedy. arXiv preprint arXiv:2003.02831 (2020).
+- Finding Angles for Quantum Signal Processing with Machine Precision. Rui Chao, Dawei Ding, András Gilyén, Cupjin Huang, and Mario Szegedy. arXiv preprint arXiv:2003.02831 (2020).
 - angle-sequence (https://github.com/alibaba-edu/angle-sequence)
