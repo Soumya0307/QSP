@@ -8,7 +8,7 @@ This coding project is aimed at conducting Hamiltonian simulaiton via three meht
 First, create and active a Python virtual environment:
 ```
 conda create -n <name> python=3.9
-conda active <name>
+conda activate <name>
 ```
 Next, clone the repository and checkout the `final_submission` branch:
 ```
