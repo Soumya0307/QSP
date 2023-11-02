@@ -37,6 +37,9 @@ def other_inputs():
     global qubit_number
     global trotter_step 
     step_number = int(input("Write doen the trotter-step "))
+    # Added from n_t_ham_sim.py
+    if step_number <= 0 or step_number > 500:
+            raise ValueError('The Trotter step count must lie between 0 and 500 inclusive!')
     trotter_step = step_number
     state = np.array(eval(input("Enter the initial state in [...] format: ")))
     if state.ndim != 1:
