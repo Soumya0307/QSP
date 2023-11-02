@@ -1,8 +1,5 @@
 from modules import numerical_trotter_hamiltonian_simulation as hs
-# from modules import runHamiltonianSimulatorbyQET as ks
-# from modules.QSP_hamiltonian_simulation import HamSim_byQET
-from modules.__QSP_hamiltonian_simulation import HamSim_byQET
-
+from modules.QSP_hamiltonian_simulation import HamSim_byQET
 
 import numpy as np
 import scipy as sp
