@@ -1,6 +1,7 @@
 from modules import numerical_trotter_hamiltonian_simulation as hs
 # from modules import runHamiltonianSimulatorbyQET as ks
-from modules.QSP_hamiltonian_simulation import run_QSP_HamSim
+# from modules.QSP_hamiltonian_simulation import HamSim_byQET
+from modules.__QSP_hamiltonian_simulation import HamSim_byQET
 
 
 import numpy as np
@@ -345,6 +346,15 @@ if __name__ == "__main__":
     user()
     output_info_list = list(eval(input('Provide a list of keys to perform desired tasks based on the following legend:\n0: statevector at time t\n1: energy at time t\n2: Energy evolution data up to max time\n3: fidelity evolution data up to max time\n\t\t: ')))
 
+    ## Instantiate an object of the class HamSim_byQET
+    obj_QSP = HamSim_byQET(num_qubits=qubit_number, 
+                           H=normalized_hamiltonian,
+                           evolution_time=execution_time,
+                           starting_state=initial_state)
+    
+    obj_QSP.computeQSPPhaseAngles()
+    obj_QSP.buildCirc()
+
     for item in output_info_list:
         if item == 0:
             sv_file_name = input('Provide a file name for your state vector data: ')
@@ -357,7 +367,7 @@ if __name__ == "__main__":
                        'Initial State: {}'.format(initial_state)]
             file_sv_data = "statevector_{}_metadata.txt".format(sv_file_name)
             try:
-                QSP_sv = run_QSP_HamSim(num_qubits=qubit_number, H = normalized_hamiltonian, evolution_time=execution_time)[1].data
+                QSP_sv = obj_QSP.runHamiltonianSimulator()[1].data
                 sv_data.insert(2,"QSP statevector at time {}: \n{}".format(execution_time, QSP_sv))
             except:
                 print('for the inputs you have provided, unfortunately, the QSP module is not working.\nIt is a particularly fragile module. We apologise for this inconvenience!\nEnjoy the classical and Trotter outputs however!:)')
@@ -375,6 +385,12 @@ if __name__ == "__main__":
                            'Execution Time: 0 to {}'.format(execution_time),
                            'Initial State: {}'.format(initial_state)]
             file_energy_data = "energy_{}_metadata.txt".format(energy_file_name)
+            try:
+                QSP_energy = obj_QSP.getEnergy()
+                energy_data.insert(2,"QSP energy at time {}: \n{}".format(execution_time, QSP_energy))
+            except:
+                print('for the inputs you have provided, unfortunately, the QSP module is not working.\nIt is a particularly fragile module. We apologise for this inconvenience!\nEnjoy the classical and Trotter outputs however!:)')
+
             with open(file_energy_data, mode = "w") as f:
                 for item in energy_data:
                     f.write(item + '\n')
@@ -385,6 +401,13 @@ if __name__ == "__main__":
         if item == 3:
             input_name_fid = input('Provide a file name for your fidelity evolution data file: ')
             hs.TrotterHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).NTFidelityTest(file_name = input_name_fid, initial_state=initial_state, max_time=execution_time)
+            try:
+                obj_QSP.saveFidelity(filename=input_name_fid, max_time=execution_time)
+            except:
+                print('for the inputs you have provided, unfortunately, the QSP module is not working.\nIt is a particularly fragile module. We apologise for this inconvenience!\nEnjoy the classical and Trotter outputs however!:)')
+            
+
 
     qc_file_name = input('Provide a file name for your quantum circuit data: ')
     hs.TrotterHamiltonianSimulation(qubit_count=qubit_number, pauli_hash_map=hash_map).getOpenQASM(file_name=qc_file_name)
+    obj_QSP.getOpenQASM(filename=qc_file_name)
