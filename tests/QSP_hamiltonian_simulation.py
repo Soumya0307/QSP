@@ -16,7 +16,12 @@ import csv
 
 
 class SignalProcessingOperators_OneBEQubit():
+    """
+    A class for building the QSP signal processing operators, also called the projector-controlled phase shift gates
 
+    Params:
+        ang_list (list): list of QSP phase angles (given by imported package PyQSP)    
+    """
     def __init__(self,
                 ang_list: list):
 
@@ -28,6 +33,9 @@ class SignalProcessingOperators_OneBEQubit():
         self.ang_list = ang_list
 
     def buildCircs(self):
+        """
+        Builds a list of projector-controlled phase shift gates, one for each QSP phase angles 
+        """
 
         if not len(self.phase_ops) == 0:
             print("WARNING MSG: self.phase_ops is not empty - overwriting the old circuits now")
@@ -38,15 +46,7 @@ class SignalProcessingOperators_OneBEQubit():
         for phi in self.ang_list:        
             circ = QuantumCircuit(2)
             circ.cx(1, 0, ctrl_state=0)
-            ### =============================================================================================
-            ### Should be 2*phi according to ComputeQSPResponse().qsp_op(phi) (Ln: 42). What about +/-??
-            ### https://qiskit.org/documentation/stubs/qiskit.circuit.library.RZGate.html#qiskit.circuit.library.RZGate
-            # circ.rz(phi, 0)
-            ### For QSP (according to PyQSP)
-            # circ.rz(-2 * phi, 0)
             circ.rz(2*phi, 0)
-            # circ.append(Operator(np.array([[np.exp(- 1j * phi), 0.], [0., np.exp(1j * phi)]])), [0])
-            ### =============================================================================================
             circ.cx(1, 0, ctrl_state=0)
             
             master_list_ops.append(circ)
@@ -62,103 +62,81 @@ class SignalProcessingOperators_OneBEQubit():
         return self.phase_ops_op
     
 
-
-
 class QET_LinLin():
+    """
+    A class for building a quantum signal processing (QSP)/ quantum eigenvalue transformation (QET) circuit, 
+    which is mainly composed of alternating projector-controlled phase shift gates and block encoding of some input
+    Hamiltonian (Hermitian matrix)
 
-    # ===========================================================================
+    Params:
+        num_qubits (int): number of qubits the input Hamiltonian acts on
+        BE_H (np.ndarray): block encoding matrix of some input Hamiltonian
+        phase_angles (list): a list of QSP phase angles (given by imported package PyQSP)
+    
+    Outputs:
+        Block encoding of the input Hamiltonian after its eigenvalues have been transformed by a polynomial function
+        as specificed by the QSP phase angles 
+        
+    """
     def _check_if_properBE(self,
                           num_qubits: int,
                           num_BE_qubits: int,
                           BE_H: np.ndarray):
 
-        # Check if BE_H is unitary
+        ## Check if BE_H is unitary
         if not Operator(BE_H).is_unitary():
             print("ERROR: Input np.ndarray BE_H is not unitary")
             return False
     
-        # Check if n+m = BE_H.dimen
+        ## Check if n+m = BE_H.dimen
         BE_num_qubits = int(np.log2(BE_H.shape[0]))
         if not (num_qubits + num_BE_qubits) == BE_num_qubits:
             print("ERROR: Num of qubits of the Hamiltonian + num of Block-encoding qubits does not match with the number of qubits of BE_H")
             return False
     
         return True
-    # ===========================================================================
 
     
     def __init__(self,
                  num_qubits: int,
-                 # TODO: Should BE_H be Gate, QuantumCircuit, np.ndarray, or others?
                  BE_H: np.ndarray,
-                 # TODO:
                  phase_angles: list,
                  num_BE_qubits: int = 1,
-                 phase_angles_order: str = "desc",   # {"desc", "asce"}
+                 phase_angles_order: str = "desc",
                  real_poly: bool = True,
                  special_case: bool = False,
-                 # style: str = "linlin",              # {"Linlin", "grand_uni"}
-                ):
-        # TODO: reorder parameters and clarify their descrips. 
+                ): 
         """
         Input:
-        1. phase_angles
-        type: python list
-        Ordered in Lin Lin's fashion
+            1. num_qubits
+            type: int
+            Number of qubits of the Hamiltonian
 
-        3. num_qubits
-        type: int
-        Number of qubits of the Hamiltonian
+            2. BE_H
+            type: np.ndarray
+            Block encoding unitary of the Hamiltonian H
 
-        # TODO Should BE_H be Gate, QuantumCircuit, np.ndarray, or others?
-        4. BE_H
-        type: np.ndarray
-        Block encoding unitary of the Hamiltonian H
+            3. phase_angles
+            type: python list
+            Ordered in Lin Lin's fashion
 
-        4. num_BE_qubits
-        type: int, default value = 1
-        The number of qubits that block encode the Hamiltonian H
-
-        2. phase_angles_order
-        type: str, default value = "desc"
-        Order of the phase angles, either "desc" or "asce"
-        
-        5. style
-        type: str, default value = "linlin"
-        Implement the QET circuit in either (1) Lin Lin or (2) Grand Uni's fashion
+            4. num_BE_qubits
+            type: int, default value = 1
+            The number of qubits that block encode the Hamiltonian H
         """
-        # ======================================================================================
-        # TODO: chech parameters that are later added, i.e. num_BE_qubits
-        # TODO: check if n + m = qubits of BE_H
-        if not isinstance(phase_angles, list):
-            raise ValueError("Error message #1")
-        if not isinstance(num_qubits, int):
-            raise ValueError("Error message #2")
-        # TODO Should BE_H be Gate, QuantumCircuit, np.ndarray, or others?
-        if not isinstance(BE_H, np.ndarray):
-            raise ValueError("Error message #3")
-        # TODO
-        if not isinstance(phase_angles_order, str):
-            pass
-        # TODO
-        # if not (isinstance(style, str)):
-        #    pass
-        # ======================================================================================
 
-        
-        # ======================================================================================
-        # Check if BE is indeed a correct block encoding?
-        # maybe write a fun check_BE(): and use e.g. .is_unitary() outside the class and call it here
-        # 
-        # or place a function at higher level and call it before calling this class()
+        if not isinstance(num_qubits, int):
+            raise ValueError("Parameter num_qubits should be of type int.")
+        if not isinstance(BE_H, np.ndarray):
+            raise ValueError("Parameter BE_H should be of type np.ndarray.")
+        if not isinstance(phase_angles, list):
+            raise ValueError("Parameter phase_angles should be of type list.")
+
         
         if not self._check_if_properBE(num_qubits, num_BE_qubits, BE_H):
             raise ValueError("ERROR MSG: BE_H is not a proper block encoding.")
         else:
-            # print("Verified: BE_H is a proper block encoding. Program continues.")
             pass            
-        
-        # ======================================================================================
         
         self.num_qubits = num_qubits
         self.num_BE_qubits = num_BE_qubits
@@ -178,153 +156,104 @@ class QET_LinLin():
         self.main_circ = None
         self.main_circ_op = None
 
-    def buildCirc(self):
 
+    def buildCirc(self):
+        """
+        Follows the QSP/QET Theorems to build the circuit
+        """
         if self.main_circ is not None:
             print("WARNING MSG: self.main_circ is not None - overwriting the old QET circuit now")
             self.main_circ = None
             self.main_circ_op = None
         
-        # Quantum registers
+        ## Quantum registers
         qreg_ctrl = QuantumRegister(1, "signal_ctrl")
         qreg_be = QuantumRegister(self.num_BE_qubits, "block_encode")
         qreg_input = QuantumRegister(self.num_qubits, "input")
                         
         qet_circ = QuantumCircuit(qreg_ctrl, qreg_be, qreg_input)
 
-        # Build an qiskit.quantum_info.Operator instance from BE_H 
+        ## Build an qiskit.quantum_info.Operator instance from BE_H 
         self.BE_Operator = Operator(self.BE_H)
         
-        # Build the signal processing operators
+        ## Build the projector-controlled phase shift gates
         self.obj_phase = SignalProcessingOperators_OneBEQubit(self.phase_angles)
         self.obj_phase.buildCircs()
 
 
-        # print("Right before the if statements. d now is of type {}, and of value {}".format(type(self.d), self.d))
-        
-        # TODO
-        # when d is even
+        ## Implements the QSP/QET algorithms for when d is even
         if self.d % 2 == 0 and self.special_case is False:
 
             # print("d = {} is even. The theorem of QET for even d implemented.".format(self.d))
-            
-            # Since the order of the phase angles are descending, we need to transverse the list of angles reversely
-            # NB: d/2 is float
 
-            ### =====================================================================
-            # Lin Lin Figure 7.9
+            ## Lin Lin Figure 7.9, for block encoding a real-valued polynomial
             if self.real_poly:
                 qet_circ.h(qreg_ctrl)
-            ### =====================================================================
             
+            ## Since the order of the phase angles are descending, we need to transverse the list of angles reversely
             for i in range(self.d//2, 0, -1):
                 qet_circ.append(self.obj_phase.getOps()[2*i],
                                 [qreg_ctrl] + [qreg_be[i] for i in range(self.num_BE_qubits)])
-                # For whatever reason, 
-                # qet_circ.append(self.BE_Operator, [qreg_be, qreg_input]) does not work
-                
-                # qet_circ.append(self.BE_Operator,
-                #                 [qreg_be[i] for i in range(self.num_BE_qubits)] + [qreg_input[i] for i in range(self.num_qubits)])
-
                 qet_circ.append(self.BE_Operator,
-                                [qreg_input[i] for i in range(self.num_qubits-1, -1, -1)] + [qreg_be[i] for i in range(self.num_BE_qubits-1, -1, -1)])
-                
+                                [qreg_input[i] for i in range(self.num_qubits-1, -1, -1)] + [qreg_be[i] for i in range(self.num_BE_qubits-1, -1, -1)])                
                 qet_circ.append(self.obj_phase.getOps()[2*i - 1],
                                 [qreg_ctrl] + [qreg_be[i] for i in range(self.num_BE_qubits)])
-                # qet_circ.append(self.BE_Operator.adjoint(),
-                #                 [qreg_be[i] for i in range(self.num_BE_qubits)] + [qreg_input[i] for i in range(self.num_qubits)])
-
                 qet_circ.append(self.BE_Operator.adjoint(),
                                 [qreg_input[i] for i in range(self.num_qubits-1, -1, -1)] + [qreg_be[i] for i in range(self.num_BE_qubits-1, -1, -1)])
     
             qet_circ.append(self.obj_phase.getOps()[0],
                             [qreg_ctrl] + [qreg_be[i] for i in range(self.num_BE_qubits)])
 
-            ### =====================================================================
-            # Lin Lin Figure 7.9
+            ## Lin Lin Figure 7.9, for block encoding a real-valued polynomial
             if self.real_poly:
                 qet_circ.h(qreg_ctrl)
-            ### =====================================================================
 
             self.main_circ = qet_circ
             self.main_circ_op = Operator(qet_circ)
             
             return
             
-        # when d is odd
+        ## Implements the QSP/QET algorithms for when d is odd
         elif self.d % 2 == 1 and self.special_case is False:
 
             # print("d = {} is odd. The theorem of QET for odd d implemented.".format(self.d))
 
-            ### =====================================================================
-            # Lin Lin Figure 7.9
+            ## Lin Lin Figure 7.9, for block encoding a real-valued polynomial
             if self.real_poly:
-               qet_circ.h(qreg_ctrl)
-            ### =====================================================================         
+               qet_circ.h(qreg_ctrl)      
             
-            # Since the order of the phase angles are descending, we need to transverse the list of angles reversely
-            # NB: d/2 is float    
+            ## Since the order of the phase angles are descending, we need to transverse the list of angles reversely  
             for i in range((self.d - 1)//2, 0, -1):
                 qet_circ.append(self.obj_phase.getOps()[2*i + 1],
                                 [qreg_ctrl] + [qreg_be[i] for i in range(self.num_BE_qubits)])
-                # For whatever reason, 
-                # qet_circ.append(self.BE_Operator, [qreg_be, qreg_input]) does not work
-                
-                # qet_circ.append(self.BE_Operator, 
-                #                 [qreg_be[i] for i in range(self.num_BE_qubits)] + [qreg_input[i] for i in range(self.num_qubits)])
-
                 qet_circ.append(self.BE_Operator, 
-                                [qreg_input[i] for i in range(self.num_qubits-1, -1, -1)] + [qreg_be[i] for i in range(self.num_BE_qubits-1, -1, -1)])
-                
+                                [qreg_input[i] for i in range(self.num_qubits-1, -1, -1)] + [qreg_be[i] for i in range(self.num_BE_qubits-1, -1, -1)])               
                 qet_circ.append(self.obj_phase.getOps()[2*i],
                                 [qreg_ctrl] + [qreg_be[i] for i in range(self.num_BE_qubits)])
-                
-                # qet_circ.append(self.BE_Operator.adjoint(), 
-                #                 [qreg_be[i] for i in range(self.num_BE_qubits)] + [qreg_input[i] for i in range(self.num_qubits)])
-
                 qet_circ.append(self.BE_Operator.adjoint(), 
                                [qreg_input[i] for i in range(self.num_qubits-1, -1, -1)] + [qreg_be[i] for i in range(self.num_BE_qubits-1, -1, -1)])
 
             qet_circ.append(self.obj_phase.getOps()[1],
-                            [qreg_ctrl] + [qreg_be[i] for i in range(self.num_BE_qubits)])
-            
-            # qet_circ.append(self.BE_Operator, 
-            #                 [qreg_be[i] for i in range(self.num_BE_qubits)] + [qreg_input[i] for i in range(self.num_qubits)])
-
+                            [qreg_ctrl] + [qreg_be[i] for i in range(self.num_BE_qubits)])            
             qet_circ.append(self.BE_Operator, 
-                            [qreg_input[i] for i in range(self.num_qubits-1, -1, -1)] + [qreg_be[i] for i in range(self.num_BE_qubits-1, -1, -1)])
-    
+                            [qreg_input[i] for i in range(self.num_qubits-1, -1, -1)] + [qreg_be[i] for i in range(self.num_BE_qubits-1, -1, -1)])   
             qet_circ.append(self.obj_phase.getOps()[0],
                             [qreg_ctrl] + [qreg_be[i] for i in range(self.num_BE_qubits)])
 
-            
-            ### =====================================================================
-            ## Lin Lin's constant p.108
-            # qet_circ.append(Operator((0-1j)**self.d * np.identity(2 ** (1 + self.num_BE_qubits + self.num_qubits))),
-            #                [qreg_ctrl] + [qreg_be[i] for i in range(self.num_BE_qubits)] + [qreg_input[i] for i in range(self.num_qubits)])
-
-            # qet_circ.append(Operator((0-1j)**self.d * np.identity(2 ** (1 + self.num_BE_qubits + self.num_qubits))),
-            #               [qreg_input[i] for i in range(self.num_qubits-1, -1, -1)] + [qreg_be[i] for i in range(self.num_BE_qubits-1, -1, -1)] + [qreg_ctrl])
-            ### =====================================================================
-            
-            ### =====================================================================
-            # Lin Lin Figure 7.9
+            ## Lin Lin Figure 7.9, for block encoding a real-valued polynomial
             if self.real_poly:
                qet_circ.h(qreg_ctrl)
-            ### =====================================================================
             
             self.main_circ = qet_circ
             self.main_circ_op = Operator(qet_circ)
             return 
         
-        ## Gabe's modification
+        ## Handles the edge case when evolution_time = 0.
         elif self.special_case is True:
-            # So far this only works for 1 BE qubit
+            ## So far this only works for 1 BE qubit
             if self.num_BE_qubits > 1:
                 raise ValueError('We cant do more than one RN!')
             else:
-                # Note: ihave changed the size of the smaller elements from num_qb to BE_num_qb + num_qb.
-                # There was an error rasied when i appeneded to 1 + self.num_BE_qubits + self.num_qubits
                 big_X_block_size = 2 ** (self.num_qubits)
                 big_X_matrix = np.block([
                     [np.zeros((big_X_block_size, big_X_block_size)), np.eye(big_X_block_size)],
@@ -335,11 +264,9 @@ class QET_LinLin():
             qet_circ.append(big_X, [i for i in range(1,1+self.num_BE_qubits + self.num_qubits)])
  
             self.main_circ = qet_circ
-            # self.main_circ_op = Operator(qet_circ)
+            self.main_circ_op = Operator(qet_circ)
             return
             
-
-
             
     def getCirc(self):
         if self.main_circ is None:
@@ -351,15 +278,12 @@ class QET_LinLin():
             print("QET circuit hasn't been built yet. To build the circuit, please call self.buildCirc(). Returing None now.")
         return self.main_circ_op
         
-
-    # May delete this
     def _getDecomposedCirc(self):
         if self.main_circ is None:
             print("QET circuit hasn't been built yet. To build the circuit, please call self.buildCirc(). Returing None now.")
             return None
         return self.main_circ.decompose() 
     
-    # TODO: .draw("mpl") does not work here
     def drawCirc(self,
                 output: str = "text",
                 decomp: bool = False):
@@ -372,75 +296,52 @@ class QET_LinLin():
         else:
             print(self.main_circ.draw(output=output))
 
-    # def runCirc(self):
-    #     pass
-
-    # def post_selection(self):
-    #     # add msmt and post-select for the all-0s state
-    #     pass
-
-
-
 
 class HamSim_byQET():
+    """
+    A class for building a block encoding of Schrodinger's time evolution operator, exp(-iHt), via a LCU circuit.
+    This is accomplished by defining one QSP/QET circuit that block encodes matrix cos(Ht) and another that block encodes matrix sin(Ht),
+    then construct a block encoding of matrix cos(Ht) -i*sin(Ht) = exp(-iHt) via a simple LCU circuit.
 
-    # ===========================================================================
+    Params:
+        num_qubits (int): number of qubits the input Hamiltonian acts on
+        H (np.ndarray): input Hamiltonian H
+        evolution_time (float): time parameter t in the time evolution operator, exp(-iHt)
+        starting_state (np.ndarray): the initial state vector at t = 0.0
+    
+    Outputs:
+        Block encoding of Schrodinger's time evolution operator, exp(-iHt)
+    """
+
     def _check_if_properBE(self,
                           num_qubits: int,
                           num_BE_qubits: int,
                           BE_H: np.ndarray):
 
-        # Check if BE_H is unitary
+        ## Check if BE_H is unitary
         if not Operator(BE_H).is_unitary():
             print("ERROR: Input np.ndarray BE_H is not unitary")
             return False
     
-        # Check if n+m = BE_H.dimen
+        ## Check if n+m = BE_H.dimen
         BE_num_qubits = int(np.log2(BE_H.shape[0]))
         if not (num_qubits + num_BE_qubits) == BE_num_qubits:
             print("ERROR: Num of qubits of the Hamiltonian + num of Block-encoding qubits does not match with the number of qubits of BE_H")
             return False
     
         return True
-    # ===========================================================================
     
     def __init__(self,
                 num_qubits: int,
-                # BE_H: np.ndarray,
                 H : np.ndarray,
                 evolution_time: float,
                 num_BE_qubits: int = 1,
-                truncation_order: int = 8,              ## truncation order = 10, 11
+                truncation_order: int = 8,
                 approx_method: str = "Jacobi-Anger",
-                error_tolerance: float = 1e-6,          ## PyQSP's default: 1e-6
+                error_tolerance: float = 1e-6,
                 starting_state: np.ndarray = None,
                 simulator_BasicAer: bool = False,
                 ):
-        """
-        class description
-        """
-        
-        # ================================================
-        # TODO: 
-        # isinstance()
-        #
-        #
-        #
-        # ================================================
-
-        # ======================================================================================
-        # Check if BE is indeed a correct block encoding?
-        # maybe write a fun check_BE(): and use e.g. .is_unitary() outside the class and call it here
-        # 
-        # or place a function at higher level and call it before calling this class()
-        
-        # if not self._check_if_properBE(num_qubits, num_BE_qubits, BE_H):
-        #     raise ValueError("ERROR MSG: BE_H is not a proper block encoding.")
-        # else:
-        #     # print("Verified: BE_H is a proper block encoding. Program continues.")
-        #     pass            
-        
-        # ======================================================================================
         
         self.num_qubits = num_qubits
         self.num_BE_qubits = num_BE_qubits
@@ -455,19 +356,14 @@ class HamSim_byQET():
         
         self.error_tolerance = error_tolerance
         
-        ### checking if starting state has the correct number of qubits
+        ## checking if starting state has the correct number of qubits
         if starting_state is not None:
             if len(starting_state) != 2 ** self.num_qubits:
                 raise ValueError("Initial state has to be of size of {} qubits".format(2 ** self.num_qubits))
-
-        # if starting_state is not None:
-        #     if len(starting_state) != self.num_qubits:
-        #         raise ValueError("Initial state has to be of size of {} qubits".format(self.num_qubits))
             
         self.starting_state = starting_state
         self.simulator_BasicAer = simulator_BasicAer
 
-        # ===========================================
         self.cos_coeffs = None
         self.cos_ang_seq = None
         
@@ -486,10 +382,10 @@ class HamSim_byQET():
     def computeQSPPhaseAngles(self):
 
         """
-        if (self.cos_ang_seq is not None) or (self.sin_ang_seq is not None):
-            print("WARNING MSG: self.cos_ang_seq or self.sin_ang_seq is not None - overwriting the old QSP phase angles now.")
-            self.cos_ang_seq = None
-            self.sin_ang_seq = None
+        This function calls the imported package PyQSP to compute the QSP phase angles that approximate cos(xt) and sin(xt).
+        Since the PyQSP function being called, QuantumSignalProcessingPhases(), is a rather fragile and unstable method, 
+        we decided to put QuantumSignalProcessingPhases() in a try statement and run it at most 5000 times until it succeeds.
+        If the angles still cannot be computed after 5000 attempts, we raise an QSPGenerationError().
         """
 
         if (self.cos_ang_seq is not None) and (self.sin_ang_seq is not None):
@@ -501,43 +397,30 @@ class HamSim_byQET():
                                                d = self.truncation_order)
         
             self.sin_coeffs, _ = sin_xt_taylor(t = self.evolution_time,
-                                               d = self.truncation_order)
-            # print("Taylor expansions for cos(xt) and sin(xt) truncated at order {} and {}, respectively, for t = {}."\
-            #       .format(2*self.truncation_order, 2*self.truncation_order+1, self.evolution_time))
-
-        
+                                               d = self.truncation_order)        
         elif self.approx_method == "Jacobi-Anger":
             self.cos_coeffs, _ = cos_xt_JA(t = self.evolution_time,
                                            d = self.truncation_order)
         
             self.sin_coeffs, _ = sin_xt_JA(t = self.evolution_time,
                                            d = self.truncation_order)
-            # print("Jacobi-Anger expansions for cos(xt) and sin(xt) truncated at order {} and {}, respectively, for t = {}."\
-            #       .format(2*self.truncation_order, 2*self.truncation_order+1, self.evolution_time))
-
-#         print("""Parameters for computing QSP angles:
-# 1. evolution time = {}
-# 2. approximation method = {}
-# 3. truncation order = {} (for cos(xt)), {} (for sin(xt))
-# 4. QSP angles error tolerance = {}\n\nComputing...\n""".format(self.evolution_time, self.approx_method, 2*self.truncation_order, 2*self.truncation_order+1, self.error_tolerance))
         
-        
+        """ Try to compute the QSP phase angles for at most 5000 times. After 5000 rounds of failures, raise QSPGenerationError()"""
         for _ in range(5000):
             try:
                 if self.evolution_time > 0:
                     self.cos_ang_seq = QuantumSignalProcessingPhases(self.cos_coeffs, signal_operator="Wx", tolerance=self.error_tolerance)
                     self.sin_ang_seq = QuantumSignalProcessingPhases(self.sin_coeffs, signal_operator="Wx", tolerance=self.error_tolerance)
                 
-                ## Gabe's modification
+                ## Handles the special case of evolution_time = 0.0
                 else:
-                    self.cos_ang_seq, self.sin_ang_seq = [0], [None]    ## Should be None
+                    self.cos_ang_seq, self.sin_ang_seq = [0], [None]
             
             except:
                 self.cos_ang_seq = None
                 self.sin_ang_seq = None
                 continue
             else:
-                # print("QSP phase angles for cos(xt) and sin(xt) successfully generated after {} rounds!".format(_+1))
                 return
 
         raise QSPGenerationError("""FAILURE: QSP phase angles failed to be generated after 5000 tries.
@@ -573,18 +456,18 @@ We recommand reducing the evolution time to be less than 5.0 and the truncation 
             print("WARNING MSG: self.main_circ is not None - overwriting the old QET circuit now")
             self.HamSim_circ = None
         
-        # Quantum registers
+        ## Quantum registers
         qreg_HS_ctrl = QuantumRegister(1, "ctrl_LCU")
         qreg_QET_input = QuantumRegister(1 + self.num_BE_qubits + self.num_qubits)
 
         main_circ = QuantumCircuit(qreg_HS_ctrl, qreg_QET_input)
 
-        # calling the QET_LinLin() class twice
+        ## calling the QET_LinLin() class twice, one to block encode cos(Ht), the other to block encode sin(Ht)
         obj_QET_cos = QET_LinLin(num_qubits = self.num_qubits,
                                  BE_H = self.BE_H,
                                  phase_angles = self.cos_ang_seq,
                                  num_BE_qubits = self.num_BE_qubits)
-        
+        ## Special case for t = 0.0
         if self.sin_ang_seq == [None]:
             obj_QET_sin = QET_LinLin(num_qubits = self.num_qubits,
                                     BE_H = self.BE_H,
@@ -598,31 +481,21 @@ We recommand reducing the evolution time to be less than 5.0 and the truncation 
                                     num_BE_qubits = self.num_BE_qubits)
 
         
-        # Saving the two objects                        
+        ## Saving the two objects                        
         self.obj_QET_cos = obj_QET_cos
         self.obj_QET_sin = obj_QET_sin
 
         obj_QET_cos.buildCirc()
         obj_QET_sin.buildCirc()
         
-        # obj_QET_cos.drawCirc()
-        # obj_QET_sin.drawCirc()
-        
-        # ControlledGate
-        # https://qiskit.org/documentation/stubs/qiskit.circuit.ControlledGate.html
         ctrl_op_cos = obj_QET_cos.getCirc().to_gate().control(num_ctrl_qubits=1, ctrl_state="0")
-        ### TODO: IS THIS CORRECT???
-        # ctrl_op_sin = obj_QET_sin.getCirc().to_gate().control(num_ctrl_qubits=1, ctrl_state="1") 
-
-        ### TODO =============================================================================================
         op_sin = obj_QET_sin.getCirc().copy()        
         op_sin.append(Operator((0-1j) * np.identity(2 ** (1 + self.num_BE_qubits + self.num_qubits))),
                       [i for i in range(1 + self.num_BE_qubits + self.num_qubits-1, -1, -1)]) 
         ctrl_op_sin = op_sin.to_gate().control(num_ctrl_qubits=1, ctrl_state="1")        
-        ### =============================================================================================
 
 
-        
+        ## Build the LCU circuit        
         main_circ.h(qreg_HS_ctrl)
         main_circ.append(ctrl_op_cos,
                         [qreg_HS_ctrl] + [qreg_QET_input[i] for i in range(1 + self.num_BE_qubits + self.num_qubits)])
@@ -671,7 +544,9 @@ We recommand reducing the evolution time to be less than 5.0 and the truncation 
 
     
     def runHamiltonianSimulator(self) -> (Statevector, Statevector):
-        
+        """ 
+        Returns the evoluted state vector after evolution_time 
+        """
         if self.HamSim_circ is None:
             print("HamSim circuit hasn't been built yet. To build the circuit, please call self.buildCirc(). Returing None now.")           
             return self.HamSim_circ
@@ -681,82 +556,50 @@ We recommand reducing the evolution time to be less than 5.0 and the truncation 
             if self.starting_state is None:
                 state = Statevector.from_int(0, 2 ** (1 + 1 + self.num_BE_qubits + self.num_qubits))
             else:                               
-
-                # starting_state = np.flip(self.starting_state)
-                # state = Statevector.from_int(convert_binary_to_int(starting_state), 2 ** (1 + 1 + self.num_BE_qubits + self.num_qubits))
-                # if not state.is_valid():
-                #     # print("The starting state {} is not a valid quantum state. Returning None.".format(self.starting_state))
-                #     raise ValueError("The starting state {} is not a valid quantum state.".format(self.starting_state))
-
                 starting_state = Statevector(self.starting_state)
                 if not starting_state.is_valid():
-                    # print("The starting state {} is not a valid quantum state. Returning None.".format(self.starting_state))
                     raise ValueError("The starting state {} is not a valid quantum state.".format(self.starting_state))
                 
                 starting_state = starting_state.reverse_qargs().data
                 state = Statevector(np.kron(starting_state, np.array([1., 0., 0., 0., 0., 0., 0., 0.])))
            
-
-            # print("Running the Hamiltonian Simulation by QET circuit now...")
+            ## Evolve state vector under the LCU circuit
             state = state.evolve(self.HamSim_circ)
-            # print("HamSim_QET circuit successfully run. The output state vector is")
-            
-            ## TODO: cannot draw
-            # state.draw("latex")
 
         else:
             simulator = BasicAer.get_backend("statevector_simulator")
-            # print("Running the Hamiltonian Simulation by QET circuit now...")
             state = Statevector(simulator.run(transpile(self.HamSim_circ, simulator)).result().get_statevector())
-            # print("HamSim_QET circuit successfully run. The output state vector is")
             
-            ## TODO: cannot draw
-            # state.draw("latex")
-            
-        
-        # print("Post-selection on the input register begins. If the desired measurement outcome (all 0's state) on the HamSim_ctrl, signal_ctrl, and BE registers is not obtained after 1000 tries, an PostMsmtError is raised.")
-        # For post-selection, run the HamSim circuit for at most 1000 times; if the desired msmt outcome (all 0's state) cannot be obtained, raise a PostMsmtError(Exception)
-        for _ in range(1000):
-            
+        """
+        Post-selection on the input register begins. If the desired measurement outcome (all 0's state) on the HamSim_ctrl, signal_ctrl, and BE registers is not obtained after 1000 tries, an PostMsmtError is raised.
+        For post-selection, run the HamSim circuit for at most 1000 times; if the desired msmt outcome (all 0's state) cannot be obtained, raise a PostMsmtError(Exception)
+        """
+        for _ in range(1000):       
             msmt_result, post_msmt_state = state.measure([i for i in range(1 + 1 + self.num_BE_qubits)])
           
             if msmt_result != "0" * (1 + 1 + self.num_BE_qubits):
-                # print("Round {}: msmt result = {}. Try again.".format(_+1, msmt_result))
                 continue
             else:
-                # print("Round {}: msmt result = {}. Post-selection on the input register is successful!".format(_+1, msmt_result))
-                # print("The state vector after the measurement is")
-                ## TODO: cannot draw
-                # print(post_msmt_state.draw(output="latex"))
-                # print(post_msmt_state)
-
-                # Trace out the measured qubits
+                ## Trace out the measured qubits
                 density_matrix = partial_trace(post_msmt_state, [i for i in range(1 + 1 + self.num_BE_qubits)])
-                # print("The density matrix after the partical trace has purity = {} and can be visualized below:".format(density_matrix.purity()))
-                ## TODO: cannot draw
-                # plot_state_city(density_matrix)
-                # density_matrix.draw(output="city")
-                
+
                 self.StateVector = density_matrix.to_statevector()
                 self.StateVector_reverse = self.StateVector.reverse_qargs()
-
-                # print("\n\n The final state vector, i.e. the state after time evolution t = {} under the input Hamiltonian is".format(self.evolution_time))
-                ## TODO: cannot draw
-                # print(postselected_state.draw(output="latex"))
                 
                 return self.StateVector, self.StateVector_reverse
 
         raise PostMsmtError("Post-selection after 1000 rounds failed.")
-        
         return None
     
 
     def getHamiltonian(self) -> np.ndarray:
         return self.H
     
-    ## NEW
+
     def getEnergy(self) -> float:
-        
+        """
+        Computes the total energy of the system described by the input Hamiltonian at time evolution_time
+        """        
         if self.HamSim_circ is None:
             print("HamSim circuit hasn't been built yet. To build the circuit, please call self.buildCirc(). Returing None now.")           
             return self.HamSim_circ
@@ -772,6 +615,9 @@ We recommand reducing the evolution time to be less than 5.0 and the truncation 
                     filename: str,
                     max_time: float = None,
                     time_steps: int = 50):
+        """
+        Calculates the fidelity between the statevectors computed by QSP and numerical method, and save them in a .csv file.
+        """
 
         max_time = self.evolution_time if max_time == None else max_time
 
@@ -810,7 +656,6 @@ We recommand reducing the evolution time to be less than 5.0 and the truncation 
                 fidelity = state_fidelity(DensityMatrix(bench_state), DensityMatrix(output_state))
                 fidelity_list.append(fidelity)
 
-
             data = [(a, x, y) for a, (x, y) in enumerate(zip(np.linspace(0, max_time, time_steps), fidelity_list))]
             
             with open("{}_QSP_fidelity.csv".format(filename), mode="w", newline="") as f:
@@ -820,8 +665,6 @@ We recommand reducing the evolution time to be less than 5.0 and the truncation 
 
             print("Data saved to {}_QSP_fidelity.csv".format(filename))
             return
-
-
 
     def saveEnergy(self, filename, max_time=None, time_steps=50):
         max_time = self.evolution_time if max_time == None else max_time

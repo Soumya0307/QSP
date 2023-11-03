@@ -11,7 +11,6 @@ from scipy.special import jv
 from qiskit.quantum_info import Operator, random_hermitian
 
 
-
 class PostMsmtError(Exception):
     """ The error raised when 1000 rounds of post selection cannot produce the desired msmt outcome (all 0's state)"""
     pass
@@ -30,27 +29,35 @@ def construct_BE(num_qubits: int,
                  H: np.ndarray,
                  num_BE_qubits: int = 1
                 ) -> (Operator, Operator):
+    """
+    Constructs a (1, 1, 0)-block encoding of the input (Hermitian) matrix
+
+    Params:
+        num_qubits (int): number of qubits the input matrix acts on
+        H (np.ndarray): (Hermitian) matrix
+
+    Return:
+        H (qiskit.Operator): normalised H
+        BE_H (qiskit.Operator): block encoding matrix of normalised H
+
+    Raise:
+        BlockEncodingError: when block encoding cannot be constructed after 100 rounds
+    """
 
     if (num_qubits != int(np.log2(H.shape[0]))) or (num_qubits != int(np.log2(H.shape[1]))):
         raise BlockEncodingError("The dimension of H and num_qubits do not match.")
     
     ## Normalize the Hermitian matrix
-    ##  For whatever reason, H needs to be normalised twice before it can be block encoded.
+    ## For some reason, H needs to be normalised twice before it can be block encoded.
     H = H / norm(H, 2)
     H = H / norm(H, 2)
-    
-    ## H = H / (norm(H, 2)*1.05)
     
     for _ in range(100): 
-
-        # print("Round: {}. Norm = {}".format(_, norm(H, 2)))
         
         off_diag = sqrtm(np.identity(2 ** num_qubits) - H @ H)
-
         BE_H = np.kron(np.array([[1., 0.], [0., 0.]]), H) + np.kron(np.array([[0., 1.], [0., 0.]]), off_diag) + np.kron(np.array([[0., 0.], [1., 0.]]), off_diag) - np.kron(np.array([[0., 0.], [0., 1.]]), H)
         
         if Operator(BE_H).is_unitary():
-            ## return Operator(BE_H)
             return Operator(H), Operator(BE_H)
 
     raise BlockEncodingError("Block encoding of the input Hermitian matrix cannot be constructed.")
@@ -60,15 +67,32 @@ def construct_BE_rand(num_qubits: int,
                       num_BE_qubits: int = 1
                       ) -> (Operator, Operator):
 
-    ## It takes some time to run for larger num_qubits
+    """
+    Constructs a (1, 1, 0)-block encoding of a random Hermitian matrix
+
+    Params:
+        num_qubits (int): number of qubits the random Hermitian matrix acts on
+
+    Return:
+        H (qiskit.Operator): normalised Hermitian matrix
+        BE_H (qiskit.Operator): block encoding matrix of normalised H
+
+    Raise:
+        BlockEncodingError: when block encoding cannot be constructed after 1000 rounds
+
+    Notes:
+        This function takes time to compute when num_qubits is large
+    """
     
     for _ in range(1000):
         H = random_hermitian(2 ** num_qubits).data
+        
+        ## Normalize the Hermitian matrix
+        ## For some reason, H needs to be normalised twice before it can be block encoded.
         H = H / norm(H, 2)
-        ## H = H / (norm(H, 2)*1.05)
+        H = H / norm(H, 2)
     
         off_diag = sqrtm(np.identity(2 ** num_qubits) - H @ H)
-
         BE_H = np.kron(np.array([[1., 0.], [0., 0.]]), H) + np.kron(np.array([[0., 1.], [0., 0.]]), off_diag) + np.kron(np.array([[0., 0.], [1., 0.]]), off_diag) - np.kron(np.array([[0., 0.], [0., 1.]]), H)
         
         if Operator(BE_H).is_unitary():
@@ -77,29 +101,23 @@ def construct_BE_rand(num_qubits: int,
     raise BlockEncodingError("Block encoding of the input Hermitian matrix cannot be constructed.")
 
 
-
-# def check_if_properBE(num_qubits: int,
-#                       BE_H: np.ndarray,
-#                       num_BE_qubits: int = 1):
-
-#         # Check if BE_H is unitary
-#         if not Operator(BE_H).is_unitary():
-#             print("ERROR: Input np.ndarray BE_H is not unitary")
-#             return False
-    
-#         # Check if n+m = BE_H.dimen
-#         BE_num_qubits = int(np.log2(BE_H.shape[0]))
-#         if not (num_qubits + num_BE_qubits) == BE_num_qubits:
-#             print("ERROR: Num of qubits of the Hamiltonian + num of Block-encoding qubits does not match with the number of qubits of BE_H")
-#             return False
-    
-#         return True
-
-
 def cos_xt_taylor(t: float = 1.0,
                   d: int = 20,
                  ) -> (np.ndarray, str):
-    
+    """
+    Computes the Taylor approximation polynomial of function cos(xt)
+
+    Params:
+        t (float): the t parameter in function cos(xt)
+        d (int): the output Taylor approximation polynomial in x will be of order 2*d
+
+    Return:
+        coeffs (np.ndarray): coefficients of the Taylor approximation polynomial of cos(xt)
+
+    Note:
+        coeffs will be of length 2*d+1
+    """
+
     coeffs = [1]
     string_exp = "1"
     
@@ -108,14 +126,26 @@ def cos_xt_taylor(t: float = 1.0,
         coeffs.extend([0, _coeff])
         string_exp += " + {}*x**{}".format(_coeff, 2*i)
         
-    # return 2*d+1 coeffs, d+1 terms
     return np.array(coeffs), string_exp
 
 
 def sin_xt_taylor(t: float = 1.0,
                   d: int = 20,
                  ) -> (np.ndarray, str):
-    
+    """
+    Computes the Taylor approximation polynomial of function sin(xt)
+
+    Params:
+        t (float): the t parameter in function sin(xt)
+        d (int): the output Taylor approximation polynomial in x will be of order 2*d+1
+
+    Return:
+        coeffs (np.ndarray): coefficients of the Taylor approximation polynomial of sin(xt)
+
+    Note:
+        coeffs will be of length 2*d+2
+    """
+
     coeffs=[]
     string_exp = ""
     
@@ -124,13 +154,25 @@ def sin_xt_taylor(t: float = 1.0,
         coeffs.extend([0, _coeff])
         string_exp += " + {}*x**{}".format(_coeff, 2*i + 1)
 
-    # return 2*d+2 coeffs, d+1 terms
     return np.array(coeffs), string_exp
 
 
 def cos_xt_JA(t: float = 1.0,
              d: int = 20
              ) -> (np.ndarray, str):
+    """
+    Computes the Jacobi-Anger approximation polynomial of function cos(xt)
+
+    Params:
+        t (float): the t parameter in function cos(xt)
+        d (int): the output Jacobi-Anger approximation polynomial in x will be of order 2*d
+
+    Return:
+        coeffs (np.ndarray): coefficients of the Jacobi-Anger approximation polynomial of cos(xt)
+
+    Note:
+        coeffs will be of length 2*d+1
+    """
 
     cos_bessel_coeffs = [jv(0, t)]
     for i in range(1, d+1):
@@ -148,6 +190,19 @@ def cos_xt_JA(t: float = 1.0,
 def sin_xt_JA(t: float = 1.0,
              d: int = 20
              ) -> (np.ndarray, str):
+    """
+    Computes the Jacobi-Anger approximation polynomial of function sin(xt)
+
+    Params:
+        t (float): the t parameter in function sin(xt)
+        d (int): the output Jacobi-Anger approximation polynomial in x will be of order 2*d+1
+
+    Return:
+        coeffs (np.ndarray): coefficients of the Jacobi-Anger approximation polynomial of sin(xt)
+
+    Note:
+        coeffs will be of length 2*d+2
+    """
 
     sin_bessel_coeffs = []
     for i in range(d+1):
