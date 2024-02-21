@@ -7,22 +7,22 @@ This coding project is aimed at conducting Hamiltonian simulaiton via three meht
 ## Installation
 First, create and active a Python virtual environment:
 ```
-conda create -n <name> python=3.9
-conda active <name>
+$ conda create -n <name> python=3.9
+$ conda activate <name>
+```
+Next, clone the repository and checkout the `final_submission` branch:
+```
+$ git clone https://github.com/GabrielWaite/QSP-Coding.git
+$ cd QSP-Coding
+$ git checkout final_submission
 ```
 Then, pip install the required dependencies:
 ```
-pip install -r requirement.txt
+$ pip install -r requirement.txt
 ```
-Next, clone the repository:
+To run the file,ensure you are in the correct directory (`QSP-Coding`) then call the file `main.py`:
 ```
-git clone https://...
-```
-## Running the file
-To run the file, move into the correct directory then call the file ```parent.py```:
-```
-cd <folder name>
-python parent.py
+$ python main.py
 ```
 
 ## Taking User Inputs
@@ -73,9 +73,62 @@ Provide a list of keys to perform desired tasks based on the following legend:
                 :[0]
 ```
 
-7. *Questions*
-
+7. *Provide a file name for your state vector data:*
+```
+Provide a file name for your state vector data: demo
+```
 8. *Provide a file name for your quantum circuit data:*
 ```
 Provide a file name for your quantum circuit data: demo_qc
 ```
+### Example Output
+For the example just shown, **five** files will be returned:
+1. `statevector_demo_metadata.txt`
+2. `trotter_qasm_demo_qc.txt`
+3. `QSP_cos_qasm_demo_qc.txt`
+4. `QSP_sin_qasm_demo_qc.txt`
+5. `LCU_qasm_demo_qc.txt`
+
+To locate these, given the virtual environment above, ensure you are in the `QSP-Coding` directory.
+You can open the file using the following example code (macOS):
+```
+$ open -a TextEdit trotter_qasm_DEMOQC.txt
+```
+
+To see all files, run:
+```
+$ ls
+```
+
+## General Output
+By default, the Trotter and QSP ```QISKIT``` OpenQASM files will be saved.
+
+Based on tasks requested at question 6, a number of files will be saved also.
+
+- 0: metadata.txt file with statevector information
+- 1: metadata.txt file with energy informaiton
+- 2: metadata.txt file for the problem setting and a data.csv file with the energy evolution data for the spread of times
+- 3: metadata.txt file for the problem setting and a data.csv file with the fidelity evolution data for the spread of times
+
+If '[]' is passed at question 6 then only the quantum circuit for the problem setting is saved.
+## Testing
+To test the numerical and Trotter Hamiltonian simulation module, run:
+```
+python tests/numerical_trotter_testing.py
+```
+To test the quantum signal processing Hamiltonian simulation module, run:
+```
+python tests/QSP_testing.py
+```
+## Contributions
+This code has three main contributors. The main contributions of each author is as follows (not exhaustive contribution list):
+- Gabriel Waite: numerical and Trotter Hamiltonian simulation code
+- Karl Lin: Quantum signal processing Hamiltonian simulation codes
+- Soumya Sarkar: Inputs from the user and required checkings
+## Marking
+Please note that we've decided to use the public package PyQSP (https://github.com/ichuang/pyqsp) to generate the QSP phase angles. Therefore, all files under the folder name "pyqsp_master" are not of our own work and can be skipped over when assessing our codes. The rest of files are assessable.
+## References
+- Grand Unification of Quantum Algorithms. John M. Martyn, Zane M. Rossi, Andrew K. Tan, and Isaac L. Chuang. PRX Quantum 2, 040203 – Published 3 December 2021
+- PyQSP (https://github.com/ichuang/pyqsp)
+- Finding Angles for Quantum Signal Processing with Machine Precision. Rui Chao, Dawei Ding, András Gilyén, Cupjin Huang, and Mario Szegedy. arXiv preprint arXiv:2003.02831 (2020).
+- angle-sequence (https://github.com/alibaba-edu/angle-sequence)
